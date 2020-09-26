@@ -16,7 +16,7 @@ import java.util.Map;
 import static spark.Spark.*;
 
 public class App {
-
+    
     public static void main(String[] args) {
         Sql2oFoodtypeDao foodtypeDao;
         Sql2oRestaurantDao restaurantDao;
@@ -24,7 +24,8 @@ public class App {
         Connection conn;
         Gson gson = new Gson();
 
-        String connectionString = "jdbc:h2:~/jadle.db;INIT=RUNSCRIPT from 'classpath:DB/create.sql'";
+        staticFileLocation("/public");
+        String connectionString = "jdbc:h2:~/jadle.db;INIT=RUNSCRIPT from 'classpath:db/create.sql'";
         Sql2o sql2o = new Sql2o(connectionString, "", "");
 
         restaurantDao = new Sql2oRestaurantDao(sql2o);
@@ -32,6 +33,7 @@ public class App {
         reviewDao = new Sql2oReviewDao(sql2o);
         conn = sql2o.open();
 
+        //CREATE
         post("/restaurants/:restaurantId/foodtype/:foodtypeId", "application/json", (req, res) -> {
 
             int restaurantId = Integer.parseInt(req.params("restaurantId"));
@@ -79,73 +81,46 @@ public class App {
             }
         });
 
-        post("/restaurants/:restaurantId/foodtype/:foodtypeId", "application/json", (req, res) -> {
 
+        post("/restaurants/:restaurantId/reviews/new", "application/json", (req, res) -> {
             int restaurantId = Integer.parseInt(req.params("restaurantId"));
-            int foodtypeId = Integer.parseInt(req.params("foodtypeId"));
-            Restaurant restaurant = restaurantDao.findById(restaurantId);
-            Foodtype foodtype = foodtypeDao.findById(foodtypeId);
+            Review review = gson.fromJson(req.body(), Review.class);
 
-
-            if (restaurant != null && foodtype != null){
-                //both exist and can be associated
-                foodtypeDao.addFoodtypeToRestaurant(foodtype, restaurant);
-                res.status(201);
-                return gson.toJson(String.format("Restaurant '%s' and Foodtype '%s' have been associated",foodtype.getName(), restaurant.getName()));
-            }
-            else {
-                throw new ApiException(404, String.format("Restaurant or Foodtype does not exist"));
-            }
+            review.setRestaurantId(restaurantId); //we need to set this separately because it comes from our route, not our JSON input.
+            reviewDao.add(review);
+            res.status(201);
+            return gson.toJson(review);
         });
 
-        get("/restaurants/:id/foodtypes", "application/json", (req, res) -> {
+        post("/foodtypes/new", "application/json", (req, res) -> {
+            Foodtype foodtype = gson.fromJson(req.body(), Foodtype.class);
+            foodtypeDao.add(foodtype);
+            res.status(201);
+            return gson.toJson(foodtype);
+        });
+
+        //READ
+        get("/restaurants", "application/json", (req, res) -> {
+            System.out.println(restaurantDao.getAll());
+
+            if(restaurantDao.getAll().size() > 0){
+                return gson.toJson(restaurantDao.getAll());
+            }
+
+            else {
+                return "{\"message\":\"I'm sorry, but no restaurants are currently listed in the database.\"}";
+            }
+
+        });
+
+        get("/restaurants/:id", "application/json", (req, res) -> { //accept a request in format JSON from an app
             int restaurantId = Integer.parseInt(req.params("id"));
             Restaurant restaurantToFind = restaurantDao.findById(restaurantId);
             if (restaurantToFind == null){
                 throw new ApiException(404, String.format("No restaurant with the id: \"%s\" exists", req.params("id")));
             }
-            else if (restaurantDao.getAllFoodtypesByRestaurant(restaurantId).size()==0){
-                return "{\"message\":\"I'm sorry, but no foodtypes are listed for this restaurant.\"}";
-            }
-            else {
-                return gson.toJson(restaurantDao.getAllFoodtypesByRestaurant(restaurantId));
-            }
+            return gson.toJson(restaurantToFind);
         });
-
-        get("/foodtypes/:id/restaurants", "application/json", (req, res) -> {
-            int foodtypeId = Integer.parseInt(req.params("id"));
-            Foodtype foodtypeToFind = foodtypeDao.findById(foodtypeId);
-            if (foodtypeToFind == null){
-                throw new ApiException(404, String.format("No foodtype with the id: \"%s\" exists", req.params("id")));
-            }
-            else if (foodtypeDao.getAllRestaurantsForAFoodtype(foodtypeId).size()==0){
-                return "{\"message\":\"I'm sorry, but no restaurants are listed for this foodtype.\"}";
-            }
-            else {
-                return gson.toJson(foodtypeDao.getAllRestaurantsForAFoodtype(foodtypeId));
-            }
-        });
-
-
-        post("/restaurants/new", "application/json", (request, response) -> {
-            //accept a request in format JSON
-            Restaurant restaurant = gson.fromJson(request.body(), Restaurant.class); //make with GSON
-            restaurantDao.add(restaurant);//Do our thing with our DAO
-            response.status(201); //everything went well -update the response status code
-//            response.type("application/json");
-            return gson.toJson(restaurant); //send it back to be displayed
-//            return "{\"message\":\"I'm sorry, but no restaurants are currently listed in the database.\"}";
-        });
-
-
-
-        get("/restaurants/:id", "application/json", ((request, response) -> { //accept a request in form at JSON from an app
-            response.type("application/json");
-            int restaurantId = Integer.parseInt(request.params("id"));
-//            response.type("application/json");
-            return gson.toJson(restaurantDao.findById(restaurantId));
-//            return "{\"message\":\"I'm sorry, but no restaurants are currently listed in the database.\"}";
-        }));
 
         get("/restaurants/:id/reviews", "application/json", (req, res) -> {
             int restaurantId = Integer.parseInt(req.params("id"));
@@ -162,43 +137,18 @@ public class App {
             return gson.toJson(allReviews);
         });
 
-        post("/restaurants/:restaurantId/reviews/new", "application/json", (request, response) -> {
-            int restaurantId = Integer.parseInt(request.params("restaurantId"));
-            Review review = gson.fromJson(request.body(), Review.class);
-
-            review.setRestaurantId(restaurantId);
-            reviewDao.add(review);
-            response.status(201);
-            return gson.toJson(review);
-//            return "{\"message\":\"I'm sorry, but no restaurants are currently listed in the database.\"}";
-        });
-
-        post("/foodtypes/new", "application/json", (req, res) -> {
-            Foodtype foodtype = gson.fromJson(req.body(), Foodtype.class);
-            foodtypeDao.add(foodtype);
-            res.status(201);
-            return gson.toJson(foodtype);
-        });
-
         get("/foodtypes", "application/json", (req, res) -> {
             return gson.toJson(foodtypeDao.getAll());
         });
 
-        get("/restaurants", "application/json", (req, res) -> {
-            System.out.println(restaurantDao.getAll());
 
-            if(restaurantDao.getAll().size() > 0){
-                return gson.toJson(restaurantDao.getAll());
-            }
-
-            else {
-                return "{\"message\":\"I'm sorry, but no restaurants are currently listed in the database.\"}";
-            }
-
+        //CREATE
+        post("/restaurants/new", "application/json", (req, res) -> {
+            Restaurant restaurant = gson.fromJson(req.body(), Restaurant.class);
+            restaurantDao.add(restaurant);
+            res.status(201);
+            return gson.toJson(restaurant);
         });
-
-
-
 
         //FILTERS
         exception(ApiException.class, (exception, req, res) -> {
@@ -212,17 +162,9 @@ public class App {
         });
 
 
-        after(((request, response) -> {
-            response.type("application/json");
-        }));
+        after((req, res) ->{
+            res.type("application/json");
+        });
 
-
-//        post("/restaurants/new", "application/json", (req, res) -> {
-//            Restaurant restaurant = gson.fromJson(req.body(), Restaurant.class);
-//            restaurantDao.add(restaurant);
-//            res.status(201);
-//            res.type("application/json");
-//            return gson.toJson(restaurant);
-//        });
     }
 }
