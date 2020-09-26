@@ -1,0 +1,26 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'Jadle'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    compile "com.sparkjava:spark-core:2.6.0"
+    compile group: 'com.h2database', name: 'h2', version: '1.4.191'
+    compile 'org.slf4j:slf4j-simple:1.7.21'
+    compile 'org.sql2o:sql2o:1.5.4'
+    compile 'com.google.code.gson:gson:2.5'  // to be explained shortly
+}
+
+mainClassName = 'App'
+
