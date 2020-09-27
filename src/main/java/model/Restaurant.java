@@ -1,10 +1,8 @@
-package models;
+package model;
 
-import java.security.PrivateKey;
 import java.util.Objects;
 
 public class Restaurant {
-
 
     private String name;
     private String address;
@@ -13,6 +11,7 @@ public class Restaurant {
     private String website;
     private String email;
     private int id;
+
 
     public Restaurant(String name, String address, String zipcode, String phone) {
         this.name = name;
@@ -23,7 +22,6 @@ public class Restaurant {
         this.email = "no email available";
     }
 
-
     public Restaurant(String name, String address, String zipcode, String phone, String website, String email) {
         this.name = name;
         this.address = address;
@@ -32,6 +30,30 @@ public class Restaurant {
         this.website = website;
         this.email = email;
     }
+
+    //override equals n hashcode
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Restaurant)) return false;
+        Restaurant that = (Restaurant) o;
+        return id == that.id &&
+                Objects.equals(name, that.name) &&
+                Objects.equals(address, that.address) &&
+                Objects.equals(zipcode, that.zipcode) &&
+                Objects.equals(phone, that.phone) &&
+                Objects.equals(website, that.website) &&
+                Objects.equals(email, that.email);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, address, zipcode, phone, website, email, id);
+    }
+
+
+    ///Getters
 
     public String getName() {
         return name;
@@ -61,6 +83,7 @@ public class Restaurant {
         return id;
     }
 
+    //Setters
     public void setName(String name) {
         this.name = name;
     }
@@ -89,23 +112,5 @@ public class Restaurant {
         this.id = id;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Restaurant)) return false;
-        Restaurant that = (Restaurant) o;
-        return id == that.id &&
-                Objects.equals(name, that.name) &&
-                Objects.equals(address, that.address) &&
-                Objects.equals(zipcode, that.zipcode) &&
-                Objects.equals(phone, that.phone) &&
-                Objects.equals(website, that.website) &&
-                Objects.equals(email, that.email);
 
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, address, zipcode, phone, website, email, id);
-    }
 }

@@ -1,7 +1,7 @@
 package dao;
 
-import models.Restaurant;
-import models.Review;
+import model.Restaurant;
+import model.Review;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -15,14 +15,15 @@ public class Sql2oReviewDaoTest {
     private Sql2oReviewDao reviewDao;
     private Sql2oRestaurantDao restaurantDao;
 
+    private static  Sql2o sql2o;
+
     @Before
     public void setUp() throws Exception {
-        String connectionString = "jdbc:h2:~/jadle.db;INIT=RUNSCRIPT from 'classpath:DB/create.sql'";
+        String connectionString = "jdbc:h2:mem:testing;INIT=RUNSCRIPT from 'classpath:DB/create.sql'";
         Sql2o sql2o = new Sql2o(connectionString, "", "");
         reviewDao = new Sql2oReviewDao(sql2o);
         restaurantDao = new Sql2oRestaurantDao(sql2o);
         conn = sql2o.open();
-        reviewDao.clearAll();
     }
 
     @After
@@ -32,9 +33,25 @@ public class Sql2oReviewDaoTest {
     }
 
     @Test
+    public void timeStampIsReturnedCorrectly() throws Exception {
+        Restaurant testRestaurant = setupRestaurant();
+        restaurantDao.add(testRestaurant);
+        Review testReview = new Review("Captain Kirk", "foodcoma!", 3, testRestaurant.getId());
+        reviewDao.add(testReview);
+
+        long creationTime = testReview.getCreatedat();
+        long savedTime = reviewDao.getAll().get(0).getCreatedat();
+        String formattedCreationTime = testReview.getFormattedCreatedAt();
+        String formattedSavedTime = reviewDao.getAll().get(0).getFormattedCreatedAt();
+        assertEquals(formattedCreationTime,formattedSavedTime);
+        assertEquals(creationTime, savedTime);
+    }
+
+
+    @Test
     public void addingReviewSetsId() throws Exception {
         Review testReview = setupReview();
-        assertEquals(555, testReview.getRestaurantId());
+        assertEquals(1, testReview.getId());
     }
 
     @Test
@@ -90,4 +107,5 @@ public class Sql2oReviewDaoTest {
         restaurantDao.add(restaurant);
         return restaurant;
     }
+
 }

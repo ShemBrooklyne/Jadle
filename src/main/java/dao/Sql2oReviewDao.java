@@ -1,19 +1,21 @@
 package dao;
 
-import models.Review;
+import model.Review;
 import org.sql2o.Connection;
 import org.sql2o.Sql2o;
 import org.sql2o.Sql2oException;
 
 import java.util.List;
 
-public class Sql2oReviewDao implements ReviewDao{
+
+public class Sql2oReviewDao implements ReviewDao {
+
     private final Sql2o sql2o;
     public Sql2oReviewDao(Sql2o sql2o) { this.sql2o = sql2o; }
 
     @Override
     public void add(Review review) {
-        String sql = "INSERT INTO reviews (writtenby, content, rating, restaurantid) VALUES (:writtenBy, :content, :rating, :restaurantId)"; //if you change your model, be sure to update here as well!
+        String sql = "INSERT INTO reviews (writtenby, content, rating, restaurantid, createdat) VALUES (:writtenBy, :content, :rating, :restaurantId, :createdat)"; //if you change your model, be sure to update here as well!
         try (Connection con = sql2o.open()) {
             int id = (int) con.createQuery(sql, true)
                     .bind(review)
@@ -28,9 +30,6 @@ public class Sql2oReviewDao implements ReviewDao{
     @Override
     public List<Review> getAll() {
         try (Connection con = sql2o.open()) {
-            System.out.println(con.createQuery("SELECT * FROM reviews")
-                    .executeAndFetch(Review.class));
-
             return con.createQuery("SELECT * FROM reviews")
                     .executeAndFetch(Review.class);
         }
@@ -57,6 +56,7 @@ public class Sql2oReviewDao implements ReviewDao{
         }
     }
 
+
     @Override
     public void clearAll() {
         String sql = "DELETE from reviews";
@@ -67,3 +67,4 @@ public class Sql2oReviewDao implements ReviewDao{
         }
     }
 }
+

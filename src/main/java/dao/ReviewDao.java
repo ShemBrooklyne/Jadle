@@ -1,10 +1,11 @@
 package dao;
 
-import models.Review;
+import model.Review;
 
 import java.util.List;
 
 public interface ReviewDao {
+
     //create
     void add(Review review);
 
